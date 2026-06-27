@@ -92,3 +92,53 @@ class ContactApp:
         self.status_var = tk.StringVar()
         self.status_label = ttk.Label(self.root, textvariable=self.status_var, foreground="blue")
         self.status_label.place(x=20, y=420)
+        
+    def load_contacts(self):
+        """Fetch contacts from the database and display them in the Treeview."""
+        for row in self.contacts_tree.get_children():
+            self.contacts_tree.delete(row)
+
+        self.db_cursor.execute("SELECT id, name, email, phone, address FROM contacts ORDER BY name")
+        rows = self.db_cursor.fetchall()
+
+        for contact in rows:
+            self.contacts_tree.insert("", tk.END, iid=contact[0], values=contact[1:])
+
+        self.set_status(f"Loaded {len(rows)} contacts.")
+
+    def validate_form(self):
+        """Check that mandatory fields are filled in before database operations."""
+        if not self.name_var.get().strip():
+            messagebox.showwarning("Validation Error", "Name is required.")
+            return False
+        if not self.email_var.get().strip():
+            messagebox.showwarning("Validation Error", "Email is required.")
+            return False
+        if not self.phone_var.get().strip():
+            messagebox.showwarning("Validation Error", "Phone is required.")
+            return False
+        return True
+
+    def add_contact(self):
+        """Insert a new contact into the SQLite database."""
+        if not self.validate_form():
+            return
+
+        self.db_cursor.execute(
+            "INSERT INTO contacts (name, email, phone, address) VALUES (?, ?, ?, ?)",
+            (self.name_var.get().strip(), self.email_var.get().strip(), self.phone_var.get().strip(), self.address_var.get().strip()),
+        )
+        self.db_connection.commit()
+        self.load_contacts()
+        self.clear_form()
+        self.set_status("Contact added successfully.")
+
+    def update_contact(self):
+        """Update the selected contact record in the database."""
+        selected = self.contacts_tree.selection()
+        if not selected:
+            messagebox.showinfo("Update Contact", "Select a contact to update.")
+            return
+
+        if not self.validate_form():
+            return
