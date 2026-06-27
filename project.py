@@ -92,7 +92,7 @@ class ContactApp:
         self.status_var = tk.StringVar()
         self.status_label = ttk.Label(self.root, textvariable=self.status_var, foreground="blue")
         self.status_label.place(x=20, y=420)
-        
+
     def load_contacts(self):
         """Fetch contacts from the database and display them in the Treeview."""
         for row in self.contacts_tree.get_children():
@@ -142,3 +142,11 @@ class ContactApp:
 
         if not self.validate_form():
             return
+        contact_id = selected[0]
+        self.db_cursor.execute(
+            "UPDATE contacts SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?",
+            (self.name_var.get().strip(), self.email_var.get().strip(), self.phone_var.get().strip(), self.address_var.get().strip(), contact_id),
+        )
+        self.db_connection.commit()
+        self.load_contacts()
+        self.set_status("Contact updated successfully.")
