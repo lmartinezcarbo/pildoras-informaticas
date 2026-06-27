@@ -150,3 +150,58 @@ class ContactApp:
         self.db_connection.commit()
         self.load_contacts()
         self.set_status("Contact updated successfully.")
+
+    def delete_contact(self):
+        """Remove the selected contact from the database."""
+        selected = self.contacts_tree.selection()
+        if not selected:
+            messagebox.showinfo("Delete Contact", "Select a contact to delete.")
+            return
+
+        result = messagebox.askyesno("Delete Contact", "Are you sure you want to delete this contact?")
+        if not result:
+            return
+
+        contact_id = selected[0]
+        self.db_cursor.execute("DELETE FROM contacts WHERE id = ?", (contact_id,))
+        self.db_connection.commit()
+        self.load_contacts()
+        self.clear_form()
+        self.set_status("Contact deleted successfully.")
+
+    def clear_form(self):
+        """Reset the input fields so the user can add a new contact."""
+        self.name_var.set("")
+        self.email_var.set("")
+        self.phone_var.set("")
+        self.address_var.set("")
+        self.contacts_tree.selection_remove(self.contacts_tree.selection())
+        self.set_status("Form cleared.")
+
+    def on_row_select(self, event):
+        """Populate the form when the user selects a contact from the list."""
+        selected = self.contacts_tree.selection()
+        if not selected:
+            return
+        contact_id = selected[0]
+        values = self.contacts_tree.item(contact_id, "values")
+        self.name_var.set(values[0])
+        self.email_var.set(values[1])
+        self.phone_var.set(values[2])
+        self.address_var.set(values[3])
+        self.set_status(f"Selected contact ID {contact_id}.")
+
+    def set_status(self, message):
+        """Update the status label displayed at the bottom of the window."""
+        self.status_var.set(message)
+
+    def close(self):
+        """Close the database connection before the application exits."""
+        self.db_connection.close()
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ContactApp(root)
+    root.protocol("WM_DELETE_WINDOW", lambda: (app.close(), root.destroy()))
+    root.mainloop()
